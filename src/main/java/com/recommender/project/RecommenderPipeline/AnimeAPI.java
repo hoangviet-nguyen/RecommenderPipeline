@@ -8,6 +8,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+
 import java.net.http.HttpRequest.BodyPublisher;
 
 import com.google.gson.JsonParser;
@@ -18,9 +19,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.recommender.project.RecommenderPipeline.data_models.Anime;
-import com.recommender.project.RecommenderPipeline.data_models.Rating;
-import com.recommender.project.RecommenderPipeline.data_models.User;
-import com.recommender.project.RecommenderPipeline.data_models.wrapper.UserRate;
+import com.recommender.project.RecommenderPipeline.data_models.wrapper.APIUser;
+import com.recommender.project.RecommenderPipeline.data_models.wrapper.APIRating;
 
 public class AnimeAPI {
     
@@ -30,19 +30,14 @@ public class AnimeAPI {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static AnimeAPI api;
     private static final Type animeType = new TypeToken<List<Anime>>(){}.getType();
-    private static final Type userType = new TypeToken<List<User>>(){}.getType();
-    private static final Type userRateType = new TypeToken<List<UserRate>>(){}.getType();
+    private static final Type userType = new TypeToken<List<APIUser>>(){}.getType();
+    private static final Type userRateType = new TypeToken<List<APIRating>>(){}.getType();
 
     private AnimeAPI() {}
 
     public static AnimeAPI getAnimeAPI() {
         if (api == null) { api = new AnimeAPI();}
         return api;
-    }
-
-    public static void main(String[] args) throws Exception {
-        AnimeAPI api = new AnimeAPI();
-        api.getUserRatings("1", 4).forEach(System.out::println);
     }
 
 /*
@@ -74,12 +69,13 @@ public class AnimeAPI {
             System.out.println("The thread making the request was interrupted");
         } catch (URISyntaxException e) {
             System.out.println("The given url is invalid");
+            throw new RuntimeException();
         }
         throw new RuntimeException();
     }
 
 
-    public List<Anime> getAnimesByTitle(String title, int limit) throws URISyntaxException {
+    public List<Anime> getAnimesByTitle(String title, int limit) {
         assert limit > 0;
         String queryString = String.format("""
             query {
@@ -150,9 +146,9 @@ public class AnimeAPI {
 * ===========================================================================================
 */
 
-    public List<User> getUsers(int numPages, int limit) {
+    public List<APIUser> getUsers(int numPages, int limit) {
         assert numPages > 0 && limit > 0;
-        List<User> allUsers = new ArrayList<>(numPages * limit);
+        List<APIUser> allUsers = new ArrayList<>(numPages * limit);
         for (int page = 1; page <= numPages; page++) {
             String queryString = String.format("""
                 query {
@@ -165,13 +161,13 @@ public class AnimeAPI {
             );
 
             var data = requestData(queryString);
-            List<User> users = gson.fromJson(data.get("users"), userType);
+            List<APIUser> users = gson.fromJson(data.get("users"), userType);
             allUsers.addAll(users);
         }
         return allUsers;
     }
 
-    public List<Rating> getUserRatings(String userId, int limit) {
+    public List<APIRating> getUserRatings(String userId, int limit) {
         String queryString = String.format("""
             query {
                 userRates(userId: "%s", page: 1, limit: %d, targetType: Anime, order: { field: updated_at, order: desc }) {
@@ -184,13 +180,15 @@ public class AnimeAPI {
         );
         
         var data = requestData(queryString);
-        List<UserRate> rawRates = gson.fromJson(data.get("userRates"), userRateType);
-        return rawRates
-            .stream()
-            .map(userRate -> new Rating(userId, userRate))
-            .toList();
+        List<APIRating> rawRates = gson.fromJson(data.get("userRates"), userRateType);
+        return rawRates;
     }
 
+/*
+* ===========================================================================================
+*                                         Utility Class
+* ===========================================================================================
+*/
     static class Query {
         private final String query;
         private final String variables;
