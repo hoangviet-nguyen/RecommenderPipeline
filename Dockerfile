@@ -1,8 +1,0 @@
-FROM mysql/mysql-server
-
-ENV MYSQL_PASSWORD=password
-ENV MYSQL_ROOT_PASSWORD=password
-ENV MYSQL_USER=user
-ENV MYSQL_DATABASE=anime_db
-
-EXPOSE 3306
