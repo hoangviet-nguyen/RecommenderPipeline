@@ -22,7 +22,6 @@ public class UserController {
     
     @GetMapping("/all")
     public List<User> getAllUsers() {
-        service.initDataBase(10, 50);
         return service.getAllUsers();
     }
 
