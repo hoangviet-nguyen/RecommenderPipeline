@@ -12,5 +12,5 @@ public interface AnimeRepository extends CrudRepository<Anime, Long> {
     @Query("SELECT a FROM Anime a WHERE LOWER(a.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     List<Anime> searchByTitle(@Param("title") String title);
     Optional<Anime> findById(Long id);
-    Iterable<Anime> findAll();
+    List<Anime> findAll();
 }

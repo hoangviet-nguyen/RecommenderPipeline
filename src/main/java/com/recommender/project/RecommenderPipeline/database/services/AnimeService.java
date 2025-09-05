@@ -13,10 +13,10 @@ import com.recommender.project.RecommenderPipeline.database.repositories.AnimeRe
 
 @Service
 public class AnimeService {
-    private AnimeAPI api = AnimeAPI.getAnimeAPI();
 
     @Autowired
     private AnimeRepository repository;
+    private AnimeAPI api = AnimeAPI.getAnimeAPI();
 
     public List<Anime> findAnimeByTitel(String title) {
         List<Anime> found = repository.searchByTitle(title);
@@ -34,9 +34,11 @@ public class AnimeService {
     }
     
     public List<Anime> getAllAnimes() {
-        List<Anime> animes = new ArrayList<>();
-        repository.findAll().forEach(anime -> animes.add(anime));
-        return animes;
+        return repository.findAll();
+    }
+
+    public void save(Anime anime) {
+        repository.save(anime);
     }
 
 }
