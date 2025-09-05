@@ -7,9 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.recommender.project.RecommenderPipeline.AnimeAPI;
 import com.recommender.project.RecommenderPipeline.data_models.User;
-import com.recommender.project.RecommenderPipeline.data_models.wrapper.APIUser;
 import com.recommender.project.RecommenderPipeline.database.repositories.UserRepository;
 
 @Service
@@ -17,7 +15,6 @@ public class UserService {
     
     @Autowired
     private UserRepository repository;
-    private AnimeAPI api = AnimeAPI.getAnimeAPI();
 
     public List<User> getAllUsers() {
         Iterable<User> found = repository.findAll();
@@ -38,10 +35,7 @@ public class UserService {
         return repository.findByApiId(apiId);
     }
 
-    public void initDataBase(int numPages, int limit) {
-        if (repository.count() == 0) {
-            List<APIUser> apiUsers = api.getUsers(numPages, limit);
-            apiUsers.forEach(user -> { repository.save(new User(user));});
-        }
+    public void save(User user) {
+        repository.save(user);
     }
 }
