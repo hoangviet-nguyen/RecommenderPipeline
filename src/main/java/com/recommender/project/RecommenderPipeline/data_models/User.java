@@ -1,6 +1,6 @@
 package com.recommender.project.RecommenderPipeline.data_models;
 
-import com.recommender.project.RecommenderPipeline.data_models.wrapper.APIUser;
+import com.google.gson.annotations.SerializedName;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,7 +16,7 @@ import lombok.Setter;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long dbId;
     private String apiId;
     private String nickName;
     private String password;
@@ -25,4 +25,12 @@ public class User {
         this.apiId = user.userId();
         this.nickName = user.nickname();
     }
+
+    @Override
+    public String toString() {
+        return String.format("[DbId: %d, ApiID: %s, Nickname: %s]", dbId, apiId, nickName);
+    }
+
+
+    public record APIUser(@SerializedName("id") String userId, String nickname) {}
 }
