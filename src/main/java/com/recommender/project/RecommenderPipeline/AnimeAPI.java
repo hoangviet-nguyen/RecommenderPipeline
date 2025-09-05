@@ -19,8 +19,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.recommender.project.RecommenderPipeline.data_models.Anime;
-import com.recommender.project.RecommenderPipeline.data_models.wrapper.APIUser;
-import com.recommender.project.RecommenderPipeline.data_models.wrapper.APIRating;
+import com.recommender.project.RecommenderPipeline.data_models.User;
+import com.recommender.project.RecommenderPipeline.data_models.Rating.APIRating;
+import com.recommender.project.RecommenderPipeline.data_models.User.APIUser;
 
 public class AnimeAPI {
     
@@ -79,12 +80,13 @@ public class AnimeAPI {
         assert limit > 0;
         String queryString = String.format("""
             query {
-                animes(search: "%s", limit: %d) {
+                animes(search: "%s", limit: %d, kind: "tv") {
                     id
                     score
                     name
                     poster { mainAltUrl }
                     description
+                    genres { name }
                 }
             }
             """, 
@@ -104,6 +106,7 @@ public class AnimeAPI {
                     name
                     poster { mainAltUrl }
                     description
+                    genres { name }
                 }
             }
             """,
@@ -126,6 +129,7 @@ public class AnimeAPI {
                     name
                     poster { mainAltUrl }
                     description
+                    genres { name }
                 }
             }
             """, limit
@@ -146,9 +150,9 @@ public class AnimeAPI {
 * ===========================================================================================
 */
 
-    public List<APIUser> getUsers(int numPages, int limit) {
+    public List<User> getUsers(int numPages, int limit) throws InterruptedException {
         assert numPages > 0 && limit > 0;
-        List<APIUser> allUsers = new ArrayList<>(numPages * limit);
+        List<User> allUsers = new ArrayList<>(numPages * limit);
         for (int page = 1; page <= numPages; page++) {
             String queryString = String.format("""
                 query {
@@ -162,26 +166,43 @@ public class AnimeAPI {
 
             var data = requestData(queryString);
             List<APIUser> users = gson.fromJson(data.get("users"), userType);
-            allUsers.addAll(users);
+            var mapped = users.stream().map(user -> new User(user)).toList();
+            allUsers.addAll(mapped);
+            Thread.sleep(500);
         }
         return allUsers;
     }
 
-    public List<APIRating> getUserRatings(String userId, int limit) {
-        String queryString = String.format("""
-            query {
-                userRates(userId: "%s", page: 1, limit: %d, targetType: Anime, order: { field: updated_at, order: desc }) {
-                    id
-                    anime { id }
-                    score
+    public List<APIRating> getUserRatings(User user, int numPages, int limit) throws InterruptedException {
+        if (limit > 50) limit = 50;
+        String userId = user.getApiId();
+        List<APIRating> userRates = new ArrayList<>(numPages * limit);
+        for (int page = 1; page <= numPages; page++) {
+            String queryString = String.format("""
+                query {
+                    userRates(userId: "%s", page: %d, limit: %d, targetType: Anime, order: { field: updated_at, order: desc }) {
+                        id
+                        anime { 
+                            id
+                            score
+                            name
+                            poster { mainAltUrl }
+                            description
+                            genres { name }
+                        }
+                        score
+                    }
                 }
-            }
-            """, userId, limit
-        );
-        
-        var data = requestData(queryString);
-        List<APIRating> rawRates = gson.fromJson(data.get("userRates"), userRateType);
-        return rawRates;
+                """, userId, page, limit
+            );
+            
+            var data = requestData(queryString);
+            List<APIRating> rawRates = gson.fromJson(data.get("userRates"), userRateType);
+            userRates.addAll(rawRates);
+            Thread.sleep(500);
+        }
+
+        return userRates;
     }
 
 /*
